@@ -39,7 +39,7 @@ async def chat(request: Request):
         "latency_ms": round(latency, 2),
         "model": result["model"]
     }
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
+

@@ -1,16 +1,25 @@
 # scripts/01_ingest_to_kafka.py
-from kafka import KafkaProducer
+from confluent_kafka import Producer
 import json, time
 
-producer = KafkaProducer(
-    bootstrap_servers="localhost:9092",
-    value_serializer=lambda v: json.dumps(v).encode()
-)
+producer = Producer({
+    "bootstrap.servers": "127.0.0.1:29092",
+})
+
+def delivery_report(err, msg):
+    if err:
+        print(f"Delivery failed: {err}")
+    else:
+        print(f"Sent: {msg.value()}")
 
 def ingest_data(records: list[dict]):
     for record in records:
-        producer.send("data.raw", value=record)
-        print(f"Sent: {record['id']}")
+        producer.produce(
+            "data.raw",
+            key=record["id"].encode(),
+            value=json.dumps(record).encode(),
+            callback=delivery_report
+        )
     producer.flush()
 
 # Test
@@ -19,4 +28,4 @@ sample_data = [
     {"id": "doc_002", "text": "Kafka to Airflow pipeline", "timestamp": time.time()},
 ]
 ingest_data(sample_data)
-print("Integration 1 OK: Data → Kafka")
+print("Integration 1 OK: Data -> Kafka")

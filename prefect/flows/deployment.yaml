@@ -1,0 +1,14 @@
+name: kafka-to-delta
+flow_name: Kafka to Delta Pipeline
+description: "Main flow: consume from Kafka and save to Delta Lake"
+path: /opt/prefect/flows
+entrypoint: kafka_to_delta.py:kafka_to_delta_flow
+work_pool_name: lab28-pool
+work_queue_name: default
+schedule:
+  cron: "*/5 * * * *"
+  timezone: null
+  day_or: true
+parameters: {}
+tags: []
+version: "1.0"

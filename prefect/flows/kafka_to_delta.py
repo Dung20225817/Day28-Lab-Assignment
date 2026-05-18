@@ -1,7 +1,9 @@
 # prefect/flows/kafka_to_delta.py
 from prefect import flow, task
+from prefect.deployments import RunnerDeployment
 from kafka import KafkaConsumer
 import json, os
+import asyncio
 import pandas as pd
 from datetime import datetime
 
@@ -36,15 +38,22 @@ def save_to_delta(records):
     df.to_parquet(f"{path}/batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet")
     print(f"Saved {len(df)} records to Delta Lake")
 
-@flow(name="Kafka to Delta Pipeline", schedule="* */5 * * *")
+@flow(name="Kafka to Delta Pipeline")
 def kafka_to_delta_flow():
     """Main flow: consume from Kafka and save to Delta Lake"""
     records = consume_and_process()
     save_to_delta(records)
 
 if __name__ == "__main__":
-    # Deploy flow to Prefect Orion
-    kafka_to_delta_flow.deploy(
-        name="kafka-to-delta",
-        work_queue_name="lab28-worker"
-    )
+    # Deploy flow to Prefect work pool
+    async def deploy():
+        deployment = RunnerDeployment.from_flow(
+            flow=kafka_to_delta_flow,
+            name="kafka-to-delta",
+            work_pool_name="lab28-pool",
+            work_queue_name="default",
+            cron="*/5 * * * *",
+        )
+        await deployment.apply()
+
+    asyncio.run(deploy())
